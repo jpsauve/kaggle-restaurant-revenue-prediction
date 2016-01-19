@@ -1,8 +1,9 @@
 ---
-title: "Kaggle - Restaurant Revenue Prediction (or: Regression with little training data)"
+title: 'Kaggle - Restaurant Revenue Prediction (or: Regression with little training
+  data)'
 author: "Jacques Sauve"
 date: "January 9th, 2016"
-output: html_document
+output: pdf_document
 ---
 
 # Executive Summary
@@ -45,9 +46,11 @@ Evaluation by Root Mean Squared Error (RMSE)
 Load the data and see how much we have.
 
 ```{r load, cache=TRUE}
-# get train data from https://www.kaggle.com/c/restaurant-revenue-prediction/download/train.csv.zip
+# get train data from
+# https://www.kaggle.com/c/restaurant-revenue-prediction/download/train.csv.zip
 train <- read.csv("../input/train.csv", stringsAsFactors=F)
-# get test data from https://www.kaggle.com/c/restaurant-revenue-prediction/download/test.csv.zip
+# get test data from
+# https://www.kaggle.com/c/restaurant-revenue-prediction/download/test.csv.zip
 test <- read.csv("../input/test.csv", stringsAsFactors=F)
 dim(train)
 dim(test)
@@ -108,12 +111,12 @@ library(lattice)
 histogram(train$revenue)
 ```
 
-Conclusions:
+Conclusions from initial data exploration:
 
 - No real need to transform predictors;
 - There is a bit of skew in revenue;
 - All these zeros look like missing data and will be converted to NAs prior to imputation;
-- The Open.Date field may be converted into new features (days since opening date, year month, day)
+- The Open.Date field may be converted into new features (days since opening date, year, month, day)
 
 There is an interesting visual representation of the data [here](https://www.kaggle.com/arsenal/restaurant-revenue-prediction/geomap-for-average-revenue) as a geomap of average revenue.
 It doesn't help for modeling but is a nice visual touch.
@@ -142,8 +145,9 @@ print(GT, file = "../output/geomap.html")
 ## Imputation for missing data
 
 Impute using Multivariate Imputation by Chained Equations (mice)
+
 - For imputation methods, see methods(mice)
-- I used the fastpmm method and small values for m and maxit due for speed
+- I used the `fastpmm` method and small values for m and maxit due for speed
 rf is used normally, but other methods (sample, for example), 
 when there is a lot of data
 
@@ -151,7 +155,8 @@ when there is a lot of data
 library(mice)
 library(caret)
 train[train==0] = NA
-tempData <- mice(train, m=1, maxit=2, meth='rf', seed=501, printFlag=FALSE)
+tempData <- mice(train, m=1, maxit=2, meth='rf', 
+                 seed=501, printFlag=FALSE)
 train <- complete(tempData, 1)
 ```
 
@@ -179,7 +184,7 @@ library(caret)
 print (nearZeroVar(train, saveMetrics = FALSE))
 ```
 
-Result: nothing to remove due to nera-zero variance.
+Result: nothing to remove due to near-zero variance.
 
 ### Predictor removal: correlation
 
@@ -192,10 +197,11 @@ correlations = cor(train[,nums])
 corrplot(correlations, order = "hclust")
 ```
 
-- This plot shows that there is some correlation between numerical predictors
-    + We will investigate the removal of correlated predictors during modeling
-    + There is unfortunately very little correlation between predictors and revenue,
-    so that we don't expect well-performing models.
+This plot shows that there is some correlation between numerical predictors
+
+- We will investigate the removal of correlated predictors during modeling
+- There is unfortunately very little correlation between predictors and
+revenue, so that we don't expect well-performing models.
 
 Let's look at some scatterplots to see relationships.
 
@@ -240,7 +246,7 @@ ggplot(train, aes(x=Type, y=revenue)) +
 
 # Modeling
 
-I tested many different models and tuned them using the caret package.
+Many different models were tested and tuned using the caret package.
 These are the models tested:
 
 - Ordinary Least Squares
@@ -266,7 +272,7 @@ I will only show the best performing models here, all based on Gradient Boosting
 Since we dont have much data, we will not split the training data to get a validation set; we will use cross-validation, even if the results will not be very indicative of the test RMSE.
 The final test will have to come from Kaggle.
 
-```{r form, warning=FALSE, cache=TRUE}
+```{r form, warning=FALSE, message=FALSE, cache=TRUE}
 library(caret)
 library(mice)
 ### WARNING 2: The RWeka package does not work well with some forms of
@@ -282,7 +288,8 @@ read.data = function(filename) {
     data$City.Group = as.factor(data$City.Group)
     return (data)
 }
-# get example submission from https://www.kaggle.com/c/restaurant-revenue-prediction/download/sampleSubmission.csv
+# get example submission from
+# https://www.kaggle.com/c/restaurant-revenue-prediction/download/sampleSubmission.csv
 prepare.submission = function(fit, test, fit.name, fun = NULL) {
     result = data.frame(Id = test$Id)
     result$Prediction = predict(fit, test)
@@ -298,8 +305,8 @@ prepare.submission = function(fit, test, fit.name, fun = NULL) {
 # when there is a lot of data
 impute = function(data, method='rf') {
     data[data==0] = NA
-    tempData <- mice(data, m=1, maxit=2, meth=method, seed=501, printFlag=FALSE)
-    # second parameter is the number of the dataset. We have m datasets.
+    tempData <- mice(data, m=1, maxit=2, meth=method, 
+                     seed=501, printFlag=FALSE)
     return (complete(tempData, 1))
 }
 remove.correlated.predictors = function(data) {
@@ -354,12 +361,15 @@ gbmFit = do.gbm(revenue ~ ., data=train)
 # ni_nt_nc_nf = 'no imputation, no transformation, 
 # no removal due to correlation, no additional features
 test = read.data('../input/test.csv')
-prepare.submission(gbmFit, test, 'gbm_ni_nt_nc_nf') # Leaderboard 1844142.14327
-leaderboard = data.frame(fit='gbm_ni_nt_nc_nf', rmse=1844142.14327, position=770)
+prepare.submission(gbmFit, test, 'gbm_ni_nt_nc_nf') 
+leaderboard = data.frame(fit='gbm_ni_nt_nc_nf', 
+                         rmse=1844142.14327, position=770)
 ```
 
+Result: position 770 of 2257 teams on Kaggle.
+
 One can see that the $R^2$ value is very low, as expected due to the small training dataset.
-The line `leaderboard = ...` indicate the RMSE on the private Kaggle leaderboard as well as the position achieved ou of 2257 competing teams.
+The line `leaderboard = ...` indicates the RMSE on the private Kaggle leaderboard as well as the position achieved ou of 2257 competing teams.
 
 ## With imputation
 
@@ -375,8 +385,12 @@ train = train[, -(1:3)]
 gbmFit = do.gbm(revenue ~ ., data=train)
 test = read.data('../input/test.csv')
 prepare.submission(gbmFit, test, 'gbm_it_nt_nc_nf')
-leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_nt_nc_nf', rmse=1845526.06265, position=785))
+leaderboard = rbind(leaderboard, 
+                    data.frame(fit='gbm_it_nt_nc_nf', 
+                               rmse=1845526.06265, position=785))
 ```
+
+Result: about the same.
 
 ## Removing correlated predictors
 
@@ -393,8 +407,12 @@ train = remove.correlated.predictors(train)
 gbmFit = do.gbm(revenue ~ ., data=train)
 test = read.data('../input/test.csv')
 prepare.submission(gbmFit, test, 'gbm_it_nt_rc_nf') 
-leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_nt_rc_nf', rmse=1845879.34674, position=787))
+leaderboard = rbind(leaderboard, 
+                    data.frame(fit='gbm_it_nt_rc_nf', 
+                               rmse=1845879.34674, position=787))
 ```
+
+Result: about the same.
 
 ## With additional features
 
@@ -421,8 +439,12 @@ gbmFit = do.gbm(revenue ~ ., data=train)
 test = read.data('../input/test.csv')
 test = add.features(test)
 prepare.submission(gbmFit, test, 'gbm_it_nt_nc_wf') 
-leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_nt_nc_wf', rmse=1832814.59420, position=618))
+leaderboard = rbind(leaderboard, 
+                    data.frame(fit='gbm_it_nt_nc_wf', 
+                               rmse=1832814.59420, position=618))
 ```
+
+Result: Good improvement: position = 618.
 
 ## With transformation
 
@@ -441,8 +463,12 @@ gbm_it_wlt_nc_wf = do.gbm(revenue ~ ., data=train)
 test = read.data('../input/test.csv')
 test = add.features(test)
 prepare.submission(gbm_it_wlt_nc_wf, test, 'gbm_it_wlt_nc_wf', fun=exp) 
-leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_wlt_nc_wf', rmse=1780045.02033, position=57))
+leaderboard = rbind(leaderboard, 
+                    data.frame(fit='gbm_it_wlt_nc_wf', 
+                               rmse=1780045.02033, position=57))
 ```
+
+Result: Good improvement: position = 57.
 
 ## With imputation of missing test data as well
 
@@ -482,8 +508,12 @@ test$Open.Date = Open.Date
 test$Id = Id
 test = add.features(test)
 prepare.submission(gbmFit, test, 'gbm_itt_wlt_nc_wf', fun=exp) 
-leaderboard = rbind(leaderboard, data.frame(fit='gbm_itt_wlt_nc_wf', rmse=1785557.44521, position=79))
+leaderboard = rbind(leaderboard, 
+                    data.frame(fit='gbm_itt_wlt_nc_wf', 
+                               rmse=1785557.44521, position=79))
 ```
+
+Result: no improvement.
 
 ## With multiple imputation
 
@@ -500,7 +530,8 @@ train$revenue = log(train$revenue)
 test = read.data('../input/test.csv')
 test = add.features(test)
 train[train==0] = NA
-tempData <- mice(train, m=NUM.IMPUTATIONS, maxit=2, meth='rf', seed=501)
+tempData <- mice(train, m=NUM.IMPUTATIONS, maxit=2, meth='rf', 
+                 seed=501, printFlag=FALSE)
 predictions = data.frame(row.names=1:nrow(test))
 for (i in (1:NUM.IMPUTATIONS)) {
     train = complete(tempData, i)
@@ -513,9 +544,12 @@ result = data.frame(Id = test$Id)
 result$Prediction = exp(rowMeans(predictions))
 write.csv(result, file = '../output/gbm_mi_wlt_nc_wf_results.csv',
           quote = FALSE, row.names = FALSE)
-leaderboard = rbind(leaderboard, data.frame(fit='gbm_mi_wlt_nc_wf', rmse=1953404.65481, position=1725))
+leaderboard = rbind(leaderboard, 
+                    data.frame(fit='gbm_mi_wlt_nc_wf', 
+                               rmse=1953404.65481, position=1725))
 ```
 
+Result: no improvement.
 Wow! Something went wrong here. I only used multiple imputation compared to last model: it should have improved. 
 Actually, the RMSE value is quite sensitive.
 Let's try without transformation.
@@ -534,7 +568,8 @@ train = read.data('../input/train.csv')
 test = read.data('../input/test.csv')
 test = add.features(test)
 train[train==0] = NA
-tempData <- mice(train, m=NUM.IMPUTATIONS, maxit=2, meth='rf', seed=501)
+tempData <- mice(train, m=NUM.IMPUTATIONS, maxit=2, meth='rf', 
+                 seed=501, printFlag=FALSE)
 predictions = data.frame(row.names=1:nrow(test))
 for (i in (1:NUM.IMPUTATIONS)) {
     train = complete(tempData, i)
@@ -547,8 +582,12 @@ result = data.frame(Id = test$Id)
 result$Prediction = rowMeans(predictions)
 write.csv(result, file = '../output/gbm_mi_nt_nc_wf_results.csv',
           quote = FALSE, row.names = FALSE)
-leaderboard = rbind(leaderboard, data.frame(fit='gbm_mi_nt_nc_wf', rmse=1796661.54897, position=146))
+leaderboard = rbind(leaderboard, 
+                    data.frame(fit='gbm_mi_nt_nc_wf', 
+                               rmse=1796661.54897, position=146))
 ```
+
+Result: no improvement.
 
 ## Model Performance
 
@@ -594,7 +633,7 @@ It doesn't appear that this would be a very useful model for predicting revenue 
 - Some code from Kuhn and Johnson book: Applied predictive Modeling
     + To see code from Kuhn and Johnson's book:
 
-```{r}
+```{r eval=FALSE}
 library(AppliedPredictiveModeling)
 scriptLocation()
 ```

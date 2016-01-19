@@ -98,7 +98,9 @@ img {
 <div id="data-exploration" class="section level1">
 <h1>Data Exploration</h1>
 <p>Load the data and see how much we have.</p>
-<pre class="r"><code>train &lt;- read.csv(&quot;../input/train.csv&quot;, stringsAsFactors=F)
+<pre class="r"><code># get train data from https://www.kaggle.com/c/restaurant-revenue-prediction/download/train.csv.zip
+train &lt;- read.csv(&quot;../input/train.csv&quot;, stringsAsFactors=F)
+# get test data from https://www.kaggle.com/c/restaurant-revenue-prediction/download/test.csv.zip
 test &lt;- read.csv(&quot;../input/test.csv&quot;, stringsAsFactors=F)
 dim(train)</code></pre>
 <pre><code>## [1] 137  43</code></pre>
@@ -314,6 +316,7 @@ read.data = function(filename) {
     data$City.Group = as.factor(data$City.Group)
     return (data)
 }
+# get example submission from https://www.kaggle.com/c/restaurant-revenue-prediction/download/sampleSubmission.csv
 prepare.submission = function(fit, test, fit.name, fun = NULL) {
     result = data.frame(Id = test$Id)
     result$Prediction = predict(fit, test)
@@ -385,6 +388,7 @@ gbmFit = do.gbm(revenue ~ ., data=train)</code></pre>
 test = read.data('../input/test.csv')
 prepare.submission(gbmFit, test, 'gbm_ni_nt_nc_nf') # Leaderboard 1844142.14327
 leaderboard = data.frame(fit='gbm_ni_nt_nc_nf', rmse=1844142.14327, position=770)</code></pre>
+<p>Result: position 770 of 2257 teams.</p>
 <p>One can see that the <span class="math">\(R^2\)</span> value is very low, as expected due to the small training dataset. The line <code>leaderboard = ...</code> indicate the RMSE on the private Kaggle leaderboard as well as the position achieved ou of 2257 competing teams.</p>
 </div>
 <div id="with-imputation" class="section level2">
@@ -406,6 +410,7 @@ gbmFit = do.gbm(revenue ~ ., data=train)</code></pre>
 <pre class="r"><code>test = read.data('../input/test.csv')
 prepare.submission(gbmFit, test, 'gbm_it_nt_nc_nf')
 leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_nt_nc_nf', rmse=1845526.06265, position=785))</code></pre>
+<p>Result: about the same.</p>
 </div>
 <div id="removing-correlated-predictors" class="section level2">
 <h2>Removing correlated predictors</h2>
@@ -427,6 +432,7 @@ gbmFit = do.gbm(revenue ~ ., data=train)</code></pre>
 <pre class="r"><code>test = read.data('../input/test.csv')
 prepare.submission(gbmFit, test, 'gbm_it_nt_rc_nf') 
 leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_nt_rc_nf', rmse=1845879.34674, position=787))</code></pre>
+<p>Result: about the same.</p>
 </div>
 <div id="with-additional-features" class="section level2">
 <h2>With additional features</h2>
@@ -458,6 +464,7 @@ gbmFit = do.gbm(revenue ~ ., data=train)</code></pre>
 test = add.features(test)
 prepare.submission(gbmFit, test, 'gbm_it_nt_nc_wf') 
 leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_nt_nc_wf', rmse=1832814.59420, position=618))</code></pre>
+<p>Result: Good improvement: position = 618.</p>
 </div>
 <div id="with-transformation" class="section level2">
 <h2>With transformation</h2>
@@ -481,6 +488,7 @@ gbm_it_wlt_nc_wf = do.gbm(revenue ~ ., data=train)</code></pre>
 test = add.features(test)
 prepare.submission(gbm_it_wlt_nc_wf, test, 'gbm_it_wlt_nc_wf', fun=exp) 
 leaderboard = rbind(leaderboard, data.frame(fit='gbm_it_wlt_nc_wf', rmse=1780045.02033, position=57))</code></pre>
+<p>Result: Good improvement: position = 57.</p>
 </div>
 <div id="with-imputation-of-missing-test-data-as-well" class="section level2">
 <h2>With imputation of missing test data as well</h2>
@@ -524,6 +532,7 @@ test$Id = Id
 test = add.features(test)
 prepare.submission(gbmFit, test, 'gbm_itt_wlt_nc_wf', fun=exp) 
 leaderboard = rbind(leaderboard, data.frame(fit='gbm_itt_wlt_nc_wf', rmse=1785557.44521, position=79))</code></pre>
+<p>Result: no improvement.</p>
 </div>
 <div id="with-multiple-imputation" class="section level2">
 <h2>With multiple imputation</h2>
@@ -598,7 +607,7 @@ result$Prediction = exp(rowMeans(predictions))
 write.csv(result, file = '../output/gbm_mi_wlt_nc_wf_results.csv',
           quote = FALSE, row.names = FALSE)
 leaderboard = rbind(leaderboard, data.frame(fit='gbm_mi_wlt_nc_wf', rmse=1953404.65481, position=1725))</code></pre>
-<p>Wow! Something went wrong here. I only used multiple imputation compared to last model: it should have improved. Actually, the RMSE value is quite sensitive. Let’s try without transformation.</p>
+<p>Result: no improvement. Wow! Something went wrong here. I only used multiple imputation compared to last model: it should have improved. Actually, the RMSE value is quite sensitive. Let’s try without transformation.</p>
 </div>
 <div id="with-multiple-imputation-no-transformation" class="section level2">
 <h2>With multiple imputation, no transformation</h2>
@@ -672,6 +681,7 @@ result$Prediction = rowMeans(predictions)
 write.csv(result, file = '../output/gbm_mi_nt_nc_wf_results.csv',
           quote = FALSE, row.names = FALSE)
 leaderboard = rbind(leaderboard, data.frame(fit='gbm_mi_nt_nc_wf', rmse=1796661.54897, position=146))</code></pre>
+<p>Result: no improvement.</p>
 </div>
 <div id="model-performance" class="section level2">
 <h2>Model Performance</h2>
