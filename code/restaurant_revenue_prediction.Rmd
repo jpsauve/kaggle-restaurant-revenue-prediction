@@ -3,7 +3,7 @@ title: 'Kaggle - Restaurant Revenue Prediction (or: Regression with little train
   data)'
 author: "Jacques Sauve"
 date: "January 9th, 2016"
-output: pdf_document
+output: html_document
 ---
 
 # Executive Summary
